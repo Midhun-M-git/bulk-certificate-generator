@@ -1,5 +1,7 @@
 # Bulk Certificate Generator API
 
+[![CI](https://github.com/Midhun-M-git/bulk-certificate-generator/actions/workflows/ci.yml/badge.svg)](https://github.com/Midhun-M-git/bulk-certificate-generator/actions/workflows/ci.yml)
+
 A backend REST API built with FastAPI, SQLAlchemy, and ReportLab that processes bulk certificate generation requests for participant lists, validates recipient records, renders vector-grade PDF certificates from a predefined template, tracks generation lifecycle progress, and provides retrieval via individual downloads or consolidated ZIP archives.
 
 ---
