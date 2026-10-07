@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bulk Certificate Generator - Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090D16;
+      --card-bg: #111726;
+      --card-border: #1E293B;
+      --accent: #EAB308;
+      --accent-hover: #CA8A04;
+      --accent-glow: rgba(234, 179, 8, 0.15);
+      --primary: #3B82F6;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --success: #10B981;
+      --success-bg: rgba(16, 185, 129, 0.15);
+      --danger: #EF4444;
+      --danger-bg: rgba(239, 68, 68, 0.15);
+      --warning: #F59E0B;
+      --warning-bg: rgba(245, 158, 11, 0.15);
+      --radius: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+    }
+
+    header {
+      background: rgba(17, 23, 38, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: #1E293B;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--accent);
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .header-links {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .btn-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      padding: 7px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+      transition: all 0.2s;
+    }
+
+    .btn-link:hover {
+      color: #fff;
+      border-color: #475569;
+      background: #1A2234;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 28px 24px;
+      flex: 1;
+      width: 100%;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 1024px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .card-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 18px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.825rem;
+      font-weight: 500;
+      color: #CBD5E1;
+      margin-bottom: 5px;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      background: #0B111E;
+      border: 1px solid var(--card-border);
+      color: #F8FAFC;
+      padding: 9px 12px;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    textarea {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #3B82F6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .preset-toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .btn-chip {
+      background: #1A2234;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 0.775rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-chip:hover {
+      color: #fff;
+      border-color: #475569;
+      background: #232D42;
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: #2563EB;
+      color: #fff;
+      border: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 11px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      margin-top: 10px;
+    }
+
+    .btn-primary:hover {
+      background: #1D4ED8;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .status-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .job-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 14px;
+    }
+
+    .job-title-display {
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.725rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .badge-PENDING { background: #334155; color: #CBD5E1; }
+    .badge-PROCESSING { background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-COMPLETED { background: var(--success-bg); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-PARTIAL_SUCCESS { background: var(--warning-bg); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .badge-FAILED { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .progress-container {
+      background: #0B111E;
+      border-radius: 6px;
+      padding: 10px 14px;
+      border: 1px solid var(--card-border);
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.825rem;
+      margin-bottom: 6px;
+    }
+
+    .progress-bar-bg {
+      height: 8px;
+      background: #1E293B;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: #3B82F6;
+      width: 0%;
+      transition: width 0.25s ease;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .stat-box {
+      background: #0B111E;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-top: 3px;
+    }
+
+    .stat-value.success { color: var(--success); }
+    .stat-value.failed { color: var(--danger); }
+
+    .recipients-list-box {
+      background: #0B111E;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      max-height: 360px;
+      overflow-y: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.825rem;
+    }
+
+    th {
+      text-align: left;
+      padding: 9px 12px;
+      background: #141B2D;
+      color: var(--text-muted);
+      font-size: 0.725rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      position: sticky;
+      top: 0;
+    }
+
+    td {
+      padding: 8px 12px;
+      border-top: 1px solid #1A2234;
+      vertical-align: middle;
+    }
+
+    .action-btn {
+      background: #1E293B;
+      border: 1px solid #334155;
+      color: #CBD5E1;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+
+    .action-btn:hover {
+      background: #334155;
+      color: #fff;
+    }
+
+    .btn-zip-download {
+      background: #10B981;
+      color: #000;
+      font-weight: 600;
+      padding: 9px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      transition: background 0.15s;
+    }
+
+    .btn-zip-download:hover {
+      background: #34D399;
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(3px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: #111726;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      width: 90%;
+      max-width: 950px;
+      height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+
+    .modal-close:hover {
+      color: #fff;
+    }
+
+    .modal-body {
+      flex: 1;
+      background: #000;
+    }
+
+    .modal-body iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">BC</div>
+      <div>
+        <h1 class="brand-title">Bulk Certificate Generator</h1>
+        <p class="brand-subtitle">Asynchronous batch processing engine</p>
+      </div>
+    </div>
+    <div class="header-links">
+      <a href="/docs" target="_blank" class="btn-link">OpenAPI Docs</a>
+      <a href="/redoc" target="_blank" class="btn-link">ReDoc</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="grid">
+      <!-- Left: Create Job -->
+      <section class="card">
+        <h2 class="card-title">Create Generation Job</h2>
+        <p class="card-desc">Configure event metadata and submit recipient list for batch generation.</p>
+
+        <form id="jobForm">
+          <div class="form-group">
+            <label for="eventTitle">Event / Course Title *</label>
+            <input type="text" id="eventTitle" required value="Distributed Systems Engineering">
+          </div>
+
+          <div class="form-group">
+            <label for="issuerName">Issuing Organization *</label>
+            <input type="text" id="issuerName" required value="Institute of Software Systems">
+          </div>
+
+          <div class="form-group">
+            <label for="issueDate">Date of Issuance *</label>
+            <input type="text" id="issueDate" required value="October 7, 2026">
+          </div>
+
+          <div class="form-group">
+            <label for="description">Achievement Description</label>
+            <input type="text" id="description" value="for successfully completing 60 hours of technical curriculum">
+          </div>
+
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+              <label for="recipientsInput">Recipients (JSON Array) *</label>
+              <span id="recipientCountBadge" style="font-size: 0.75rem; color: var(--text-muted);">Loaded</span>
+            </div>
+
+            <div class="preset-toolbar">
+              <button type="button" class="btn-chip" id="btnPresetValid">Valid Sample</button>
+              <button type="button" class="btn-chip" id="btnPresetMixed">Mixed Sample (Error Handling)</button>
+              <button type="button" class="btn-chip" id="btnPresetLarge">Bulk Sample (20 items)</button>
+            </div>
+
+            <textarea id="recipientsInput" spellcheck="false" required></textarea>
+          </div>
+
+          <button type="submit" class="btn-primary" id="submitBtn">
+            <span>Submit Generation Job</span>
+          </button>
+        </form>
+      </section>
+
+      <!-- Right: Real-time Job Status & Tracking -->
+      <section class="card status-panel">
+        <div>
+          <h2 class="card-title">Job Execution Monitor</h2>
+          <p class="card-desc">Track real-time progress and inspect generated certificates.</p>
+        </div>
+
+        <div id="noJobPlaceholder" style="text-align: center; padding: 48px 20px; color: var(--text-muted);">
+          <p>No active job. Submit a job on the left to begin generation.</p>
+        </div>
+
+        <div id="jobDetailsContainer" style="display: none; flex-direction: column; gap: 14px;">
+          <div class="job-header-bar">
+            <div>
+              <div class="job-title-display" id="displayJobTitle">Event Title</div>
+              <div style="font-size: 0.78rem; color: var(--text-muted);" id="displayJobId">Job ID: ...</div>
+            </div>
+            <span class="badge" id="displayJobStatus">PENDING</span>
+          </div>
+
+          <div class="progress-container">
+            <div class="progress-meta">
+              <span id="progressText">Progress: 0%</span>
+              <span id="progressCounts">0 / 0 processed</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="progressBarFill"></div>
+            </div>
+          </div>
+
+          <div class="stats-row">
+            <div class="stat-box">
+              <div class="stat-label">Total</div>
+              <div class="stat-value" id="statTotal">0</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Processed</div>
+              <div class="stat-value" id="statProcessed">0</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Success</div>
+              <div class="stat-value success" id="statSuccess">0</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Failed</div>
+              <div class="stat-value failed" id="statFailed">0</div>
+            </div>
+          </div>
+
+          <div id="zipDownloadArea" style="display: none; margin-top: 4px;">
+            <a href="#" id="btnDownloadZip" class="btn-zip-download" download>
+              Download All Certificates (ZIP)
+            </a>
+          </div>
+
+          <div>
+            <h3 style="font-size: 0.85rem; margin-bottom: 8px; color: #CBD5E1;">Certificates</h3>
+            <div class="recipients-list-box">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Recipient</th>
+                    <th>Status</th>
+                    <th>Cert ID</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="recipientsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="modal-backdrop" id="previewModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalCertTitle">Certificate Preview</h3>
+        <button class="modal-close" id="modalCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="pdfFrame" src=""></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
