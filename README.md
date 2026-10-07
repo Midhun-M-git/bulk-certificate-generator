@@ -175,6 +175,12 @@ The application works out of the box with default values. You can override setti
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
+### Using Docker Compose
+
+```bash
+docker compose up --build
+```
+
 Once started:
 - **Interactive Web Studio**: http://localhost:8000
 - **Interactive Swagger Documentation**: http://localhost:8000/docs
@@ -278,7 +284,43 @@ curl -X POST "http://localhost:8000/api/v1/jobs" \
 
 ---
 
-### 2. Check Job Status and Progress
+### 2. Submit a Certificate Generation Job via CSV Upload
+
+`POST /api/v1/jobs/upload-csv`
+
+Submits an event certificate generation job using a multipart CSV file instead of raw JSON.
+
+#### Multipart Form Parameters:
+- `file` (File, Required): CSV file containing recipient rows. Must include a `name` or `full_name` column header. Optional columns (`email`, `grade`, `department`) are captured automatically.
+- `title` (Text, Required): Event or course title.
+- `issuer_name` (Text, Required): Issuing institution or organization.
+- `issue_date` (Text, Required): Date of issuance.
+- `description` (Text, Optional): Achievement subtitle.
+
+#### cURL Example:
+```bash
+curl -X POST "http://localhost:8000/api/v1/jobs/upload-csv" \
+  -F "file=@attendees.csv;type=text/csv" \
+  -F "title=Cloud Security Summit" \
+  -F "issuer_name=DevSec Academy" \
+  -F "issue_date=October 7, 2026" \
+  -F "description=for completing advanced threat detection training"
+```
+
+#### Response (`202 Accepted`):
+```json
+{
+  "job_id": "9b12a844-3310-4f51-89d2-7c3098f65e21",
+  "status": "PENDING",
+  "message": "Bulk certificate generation job from CSV accepted and scheduled for background processing.",
+  "total_recipients": 25,
+  "status_url": "/api/v1/jobs/9b12a844-3310-4f51-89d2-7c3098f65e21"
+}
+```
+
+---
+
+### 3. Check Job Status and Progress
 
 `GET /api/v1/jobs/{job_id}`
 
@@ -343,7 +385,7 @@ curl "http://localhost:8000/api/v1/jobs/8f395f26-8806-444a-85d8-4f1be7ad7125"
 
 ---
 
-### 3. List Recent Jobs
+### 4. List Recent Jobs
 
 `GET /api/v1/jobs?limit=50&offset=0`
 
@@ -351,7 +393,7 @@ Returns a paginated list of recent bulk generation jobs and their execution summ
 
 ---
 
-### 4. Retrieve Individual Certificate PDF
+### 5. Retrieve Individual Certificate PDF
 
 `GET /api/v1/certificates/{certificate_id}/download`
 
@@ -371,7 +413,7 @@ To view inline in a browser or modal without triggering a download:
 
 ---
 
-### 5. Download All Generated Certificates as a ZIP Archive
+### 6. Download All Generated Certificates as a ZIP Archive
 
 `GET /api/v1/jobs/{job_id}/download-zip`
 

@@ -54,6 +54,33 @@ const pdfFrame = document.getElementById("pdfFrame");
 const modalCertTitle = document.getElementById("modalCertTitle");
 const modalCloseBtn = document.getElementById("modalCloseBtn");
 
+const modeJsonBtn = document.getElementById("modeJsonBtn");
+const modeCsvBtn = document.getElementById("modeCsvBtn");
+const jsonInputArea = document.getElementById("jsonInputArea");
+const csvInputArea = document.getElementById("csvInputArea");
+const csvFileInput = document.getElementById("csvFileInput");
+let currentMode = "json";
+
+modeJsonBtn.addEventListener("click", () => {
+  currentMode = "json";
+  jsonInputArea.style.display = "block";
+  csvInputArea.style.display = "none";
+  modeJsonBtn.style.borderColor = "#3B82F6";
+  modeJsonBtn.style.color = "#fff";
+  modeCsvBtn.style.borderColor = "var(--card-border)";
+  modeCsvBtn.style.color = "var(--text-muted)";
+});
+
+modeCsvBtn.addEventListener("click", () => {
+  currentMode = "csv";
+  jsonInputArea.style.display = "none";
+  csvInputArea.style.display = "block";
+  modeCsvBtn.style.borderColor = "#3B82F6";
+  modeCsvBtn.style.color = "#fff";
+  modeJsonBtn.style.borderColor = "var(--card-border)";
+  modeJsonBtn.style.color = "var(--text-muted)";
+});
+
 function loadPreset(presetKey) {
   const data = PRESETS[presetKey] || PRESETS.valid;
   recipientsInput.value = JSON.stringify(data, null, 2);
@@ -80,35 +107,65 @@ btnPresetLarge.addEventListener("click", () => loadPreset("large"));
 jobForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  let recipients = [];
-  try {
-    recipients = JSON.parse(recipientsInput.value);
-    if (!Array.isArray(recipients) || recipients.length === 0) {
-      alert("Please provide a non-empty array of recipient objects.");
-      return;
-    }
-  } catch (err) {
-    alert("Invalid JSON format in recipients field. Please check your syntax.");
-    return;
-  }
-
-  const payload = {
-    title: document.getElementById("eventTitle").value.trim(),
-    issuer_name: document.getElementById("issuerName").value.trim(),
-    issue_date: document.getElementById("issueDate").value.trim(),
-    description: document.getElementById("description").value.trim() || null,
-    recipients: recipients
-  };
+  const titleVal = document.getElementById("eventTitle").value.trim();
+  const issuerVal = document.getElementById("issuerName").value.trim();
+  const dateVal = document.getElementById("issueDate").value.trim();
+  const descVal = document.getElementById("description").value.trim() || null;
 
   submitBtn.disabled = true;
   submitBtn.innerHTML = `<span>Submitting Job...</span>`;
 
   try {
-    const res = await fetch("/api/v1/jobs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    let res;
+    if (currentMode === "csv") {
+      if (!csvFileInput.files || csvFileInput.files.length === 0) {
+        alert("Please select a .csv file to upload.");
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<span>Submit Generation Job</span>`;
+        return;
+      }
+      const formData = new FormData();
+      formData.append("file", csvFileInput.files[0]);
+      formData.append("title", titleVal);
+      formData.append("issuer_name", issuerVal);
+      formData.append("issue_date", dateVal);
+      if (descVal) formData.append("description", descVal);
+
+      res = await fetch("/api/v1/jobs/upload-csv", {
+        method: "POST",
+        body: formData
+      });
+    } else {
+      let recipients = [];
+      try {
+        recipients = JSON.parse(recipientsInput.value);
+        if (!Array.isArray(recipients) || recipients.length === 0) {
+          alert("Please provide a non-empty array of recipient objects.");
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `<span>Submit Generation Job</span>`;
+          return;
+        }
+      } catch (err) {
+        alert("Invalid JSON format in recipients field. Please check your syntax.");
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<span>Submit Generation Job</span>`;
+        return;
+      }
+
+      const payload = {
+        title: titleVal,
+        issuer_name: issuerVal,
+        issue_date: dateVal,
+        description: descVal,
+        recipients: recipients
+      };
+
+      res = await fetch("/api/v1/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+    }
 
     if (!res.ok) {
       const errorData = await res.json();

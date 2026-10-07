@@ -506,18 +506,34 @@
           </div>
 
           <div class="form-group">
-            <div style="display: flex; justify-content: space-between; align-items: baseline;">
-              <label for="recipientsInput">Recipients (JSON Array) *</label>
-              <span id="recipientCountBadge" style="font-size: 0.75rem; color: var(--text-muted);">Loaded</span>
+            <label>Input Mode</label>
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+              <button type="button" class="btn-chip" id="modeJsonBtn" style="border-color: #3B82F6; color: #fff;">JSON Input</button>
+              <button type="button" class="btn-chip" id="modeCsvBtn">CSV File Upload</button>
             </div>
 
-            <div class="preset-toolbar">
-              <button type="button" class="btn-chip" id="btnPresetValid">Valid Sample</button>
-              <button type="button" class="btn-chip" id="btnPresetMixed">Mixed Sample (Error Handling)</button>
-              <button type="button" class="btn-chip" id="btnPresetLarge">Bulk Sample (20 items)</button>
+            <div id="jsonInputArea">
+              <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <label for="recipientsInput">Recipients (JSON Array) *</label>
+                <span id="recipientCountBadge" style="font-size: 0.75rem; color: var(--text-muted);">Loaded</span>
+              </div>
+
+              <div class="preset-toolbar">
+                <button type="button" class="btn-chip" id="btnPresetValid">Valid Sample</button>
+                <button type="button" class="btn-chip" id="btnPresetMixed">Mixed Sample (Error Handling)</button>
+                <button type="button" class="btn-chip" id="btnPresetLarge">Bulk Sample (20 items)</button>
+              </div>
+
+              <textarea id="recipientsInput" spellcheck="false"></textarea>
             </div>
 
-            <textarea id="recipientsInput" spellcheck="false" required></textarea>
+            <div id="csvInputArea" style="display: none;">
+              <label for="csvFileInput">Upload CSV File *</label>
+              <input type="file" id="csvFileInput" accept=".csv" style="margin-bottom: 8px; background: #0B111E; padding: 8px; border: 1px solid var(--card-border); border-radius: 6px; width: 100%;">
+              <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
+                File must include a <code>name</code> column header. Optional headers: <code>email</code>, <code>grade</code>, <code>department</code>, etc.
+              </p>
+            </div>
           </div>
 
           <button type="submit" class="btn-primary" id="submitBtn">

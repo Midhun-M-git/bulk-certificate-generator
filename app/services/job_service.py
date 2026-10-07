@@ -1,3 +1,5 @@
+import csv
+import io
 import json
 import logging
 import uuid
@@ -10,6 +12,7 @@ from app.database import SessionLocal
 from app.models.job import Job, JobStatus
 from app.models.certificate import Certificate, CertificateStatus
 from app.schemas.job import JobCreateRequest
+from app.schemas.recipient import RecipientInput
 from app.services.certificate_generator import CertificateGenerator
 from app.services.storage_service import storage_service
 from app.config import settings
@@ -40,6 +43,64 @@ def validate_recipient_data(name: Optional[str], email: Optional[str]) -> Tuple[
             return False, f"Invalid recipient email: {str(exc)}"
 
     return True, None
+
+
+def parse_recipients_from_csv(csv_content: bytes) -> List[RecipientInput]:
+    """
+    Parses CSV content bytes into a list of RecipientInput objects.
+    Supports utf-8 and utf-8-sig (Excel BOM), case-insensitive header matching
+    for name and email, and maps remaining columns to metadata dict.
+    """
+    try:
+        decoded_text = csv_content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        raise ValueError("Invalid file encoding. Please upload a UTF-8 encoded CSV file.")
+
+    reader = csv.DictReader(io.StringIO(decoded_text))
+    if not reader.fieldnames:
+        raise ValueError("CSV file is empty or missing a header row.")
+
+    # Locate name and email columns case-insensitively
+    name_col = None
+    email_col = None
+
+    for col in reader.fieldnames:
+        normalized = col.strip().lower()
+        if normalized in ("name", "full_name", "recipient_name", "participant_name", "student_name") and not name_col:
+            name_col = col
+        elif normalized in ("email", "email_address", "recipient_email", "mail") and not email_col:
+            email_col = col
+
+    if not name_col:
+        raise ValueError("CSV must contain a 'name' or 'full_name' column header.")
+
+    recipients = []
+    for row in reader:
+        # Check if entire row is empty
+        if not any(val and val.strip() for val in row.values() if val is not None):
+            continue
+
+        raw_name = (row.get(name_col) or "").strip()
+        raw_email = (row.get(email_col) or "").strip() if email_col and row.get(email_col) else None
+
+        # Collect metadata from remaining columns
+        metadata = {}
+        for k, v in row.items():
+            if k not in (name_col, email_col) and v is not None and v.strip():
+                metadata[k.strip()] = v.strip()
+
+        recipients.append(
+            RecipientInput(
+                name=raw_name,
+                email=raw_email,
+                metadata=metadata if metadata else None
+            )
+        )
+
+    if not recipients:
+        raise ValueError("No recipient rows found in the CSV file.")
+
+    return recipients
 
 
 class JobService:

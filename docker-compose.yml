@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bulk-certificate-generator
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:////app/storage/certificate_generator.db
+      - STORAGE_DIR=/app/storage/certificates
+      - BASE_URL=http://localhost:8000
+    volumes:
+      - certificate_storage:/app/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  certificate_storage:
+    driver: local

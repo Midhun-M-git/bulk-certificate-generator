@@ -1,6 +1,6 @@
 import os
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status, Query
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status, Query, UploadFile, File, Form
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -9,7 +9,7 @@ from app.models.job import Job, JobStatus
 from app.models.certificate import Certificate, CertificateStatus
 from app.schemas.job import JobCreateRequest, JobCreatedResponse, JobSummaryResponse, JobDetailResponse
 from app.schemas.certificate import CertificateResponse
-from app.services.job_service import job_service
+from app.services.job_service import job_service, parse_recipients_from_csv
 from app.config import settings
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
@@ -65,6 +65,66 @@ def create_job(
         job_id=job.id,
         status=job.status.value,
         message="Bulk certificate generation job accepted and scheduled for background processing.",
+        total_recipients=job.total_count,
+        status_url=status_url,
+    )
+
+
+@router.post(
+    "/upload-csv",
+    response_model=JobCreatedResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Submit a bulk certificate generation job via CSV file upload",
+    description="Accepts event metadata and a multipart CSV file containing recipient rows.",
+)
+async def create_job_from_csv(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(..., description="CSV file containing recipient records (must include a 'name' column)"),
+    title: str = Form(..., min_length=1, max_length=255, description="Event or Course title"),
+    issuer_name: str = Form(..., min_length=1, max_length=255, description="Issuing organization"),
+    issue_date: str = Form(..., min_length=1, max_length=50, description="Date of issuance"),
+    description: Optional[str] = Form(None, description="Optional achievement description"),
+    db: Session = Depends(get_db),
+):
+    if not file.filename or not file.filename.lower().endswith(".csv"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file must be a .csv file.",
+        )
+
+    try:
+        content = await file.read()
+        recipients = parse_recipients_from_csv(content)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        )
+
+    if len(recipients) > settings.MAX_RECIPIENTS_PER_BATCH:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Batch size exceeds maximum allowed of {settings.MAX_RECIPIENTS_PER_BATCH} recipients.",
+        )
+
+    request = JobCreateRequest(
+        title=title,
+        issuer_name=issuer_name,
+        issue_date=issue_date,
+        description=description,
+        recipients=recipients,
+    )
+
+    job = job_service.create_generation_job(db, request)
+
+    if job.status != JobStatus.FAILED:
+        background_tasks.add_task(job_service.process_job, job.id)
+
+    status_url = f"{settings.API_V1_PREFIX}/jobs/{job.id}"
+    return JobCreatedResponse(
+        job_id=job.id,
+        status=job.status.value,
+        message="Bulk certificate generation job from CSV accepted and scheduled for background processing.",
         total_recipients=job.total_count,
         status_url=status_url,
     )
