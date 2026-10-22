@@ -23,8 +23,8 @@ graph TD
     end
     
     Zipper --> Storage[(Volume Storage: PDF & ZIP Deliverables)]
-    Client -->|GET /api/v1/jobs/{id}/status| API
-    Client -->|GET /api/v1/jobs/{id}/download| Storage
+    Client -->|Poll Job Status by ID| API
+    Client -->|Download Generated Archive| Storage
 ```
 
 ---
