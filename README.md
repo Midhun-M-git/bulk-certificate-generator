@@ -6,6 +6,32 @@ A backend REST API built with FastAPI, SQLAlchemy, and ReportLab that processes 
 
 ---
 
+## Architecture and Asynchronous Processing Pipeline
+
+```mermaid
+graph TD
+    Client[REST API Client / Dashboard] -->|POST /api/v1/jobs CSV/JSON Batch| API[FastAPI Orchestration Gateway]
+    API --> Validator[Payload and Recipient Record Validator]
+    Validator --> DB[(Database: Job and Lifecycle Tracking)]
+    Validator --> Broker[(Redis Message Broker / Task Queue)]
+    
+    subgraph Parallel Worker Cluster
+        Broker --> Worker1[ReportLab PDF Generation Worker]
+        Broker --> Worker2[ReportLab PDF Generation Worker]
+        Worker1 --> Zipper[ZIP Archive Aggregator]
+        Worker2 --> Zipper
+    end
+    
+    Zipper --> Storage[(Volume Storage: PDF & ZIP Deliverables)]
+    Client -->|GET /api/v1/jobs/{id}/status| API
+    Client -->|GET /api/v1/jobs/{id}/download| Storage
+```
+
+---
+
+
+---
+
 ## Overview
 
 When events, bootcamps, or corporate training programs conclude, organizations frequently need to generate certificates for hundreds or thousands of participants simultaneously. 
